@@ -1,0 +1,126 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "bbca8af3ddade6259e78220d94c799e9",
+    "entities": [
+      {
+        "tableName": "library_entries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`packageName` TEXT NOT NULL, `selected` INTEGER NOT NULL, `lastOpened` INTEGER, `favorite` INTEGER NOT NULL DEFAULT 0, `excluded` INTEGER NOT NULL DEFAULT 0, `displayName` TEXT, `coverFile` TEXT, `backgroundFile` TEXT, `coverFrame_mode` TEXT, `coverFrame_zoom` REAL, `coverFrame_x` REAL, `coverFrame_y` REAL, `backgroundFrame_mode` TEXT, `backgroundFrame_zoom` REAL, `backgroundFrame_x` REAL, `backgroundFrame_y` REAL, PRIMARY KEY(`packageName`))",
+        "fields": [
+          {
+            "fieldPath": "packageName",
+            "columnName": "packageName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "manuallyAdded",
+            "columnName": "selected",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastOpened",
+            "columnName": "lastOpened",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "favorite",
+            "columnName": "favorite",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "excluded",
+            "columnName": "excluded",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "coverFile",
+            "columnName": "coverFile",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "backgroundFile",
+            "columnName": "backgroundFile",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "coverFrame.mode",
+            "columnName": "coverFrame_mode",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "coverFrame.zoom",
+            "columnName": "coverFrame_zoom",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "coverFrame.x",
+            "columnName": "coverFrame_x",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "coverFrame.y",
+            "columnName": "coverFrame_y",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "backgroundFrame.mode",
+            "columnName": "backgroundFrame_mode",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "backgroundFrame.zoom",
+            "columnName": "backgroundFrame_zoom",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "backgroundFrame.x",
+            "columnName": "backgroundFrame_x",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "backgroundFrame.y",
+            "columnName": "backgroundFrame_y",
+            "affinity": "REAL",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "packageName"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bbca8af3ddade6259e78220d94c799e9')"
+    ]
+  }
+}
