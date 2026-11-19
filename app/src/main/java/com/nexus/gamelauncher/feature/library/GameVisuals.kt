@@ -25,12 +25,12 @@ import androidx.compose.ui.unit.dp
 import com.nexus.gamelauncher.ui.*
 
 @Composable
-fun GameCover(app: InstalledApp, entry: LibraryEntry?, model: LibraryViewModel, modifier: Modifier = Modifier) {
+internal fun GameCover(app: InstalledApp, entry: LibraryEntry?, model: LibraryViewModel, modifier: Modifier = Modifier, decode: ArtworkDecode? = null) {
     var failed by remember(entry?.coverFile) { mutableStateOf(false) }
     val image = remember(entry?.coverFile) { model.artworkFile(entry?.coverFile) }
     Box(modifier.background(Panel), contentAlignment = Alignment.Center) {
         if (image != null && !failed) {
-            FramedArtwork(image, entry?.coverFrame ?: ArtworkFrame(), Modifier.matchParentSize(), onError = { failed = true })
+            FramedArtwork(image, entry?.coverFrame ?: ArtworkFrame(), Modifier.matchParentSize(), decode, onError = { failed = true })
         } else {
             Atmosphere(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary, Modifier.matchParentSize())
             AppArtwork(app, model, Modifier.fillMaxWidth(.62f).aspectRatio(1f))
@@ -77,6 +77,23 @@ fun CoverCard(
     selected: Boolean = false,
     compact: Boolean = false
 ) {
+    CoverCard(app, state.title(app), state.isFavorite(app), state.entries[app.packageName], model,
+        onClick, modifier, selected, compact)
+}
+
+@Composable
+internal fun CoverCard(
+    app: InstalledApp,
+    title: String,
+    favorite: Boolean,
+    entry: LibraryEntry?,
+    model: LibraryViewModel,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    selected: Boolean,
+    compact: Boolean,
+    decode: ArtworkDecode? = null
+) {
     var focused by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(if (focused) 1.035f else 1f, tween(150), label = "focus")
     val accent = MaterialTheme.colorScheme.primary
@@ -91,19 +108,19 @@ fun CoverCard(
         border = BorderStroke(if (focused || selected) 2.dp else 1.dp, if (focused || selected) accent else Outline)
     ) {
         Box(Modifier.clip(shape)) {
-            GameCover(app, state.entries[app.packageName], model, Modifier.matchParentSize())
+            GameCover(app, entry, model, Modifier.matchParentSize(), decode)
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(
                 0f to Color.Transparent, .50f to Color.Transparent, 1f to Night
             )))
             Text(
-                state.title(app),
+                title,
                 Modifier.align(Alignment.BottomStart).padding(horizontal = 8.dp, vertical = 7.dp),
                 fontWeight = FontWeight.Bold,
                 style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleSmall,
                 maxLines = if (compact) 1 else 2,
                 overflow = TextOverflow.Ellipsis
             )
-            if (state.isFavorite(app)) {
+            if (favorite) {
                 Icon(
                     Icons.Outlined.Star, "Favorito",
                     Modifier.align(Alignment.TopEnd).padding(7.dp).size(18.dp),

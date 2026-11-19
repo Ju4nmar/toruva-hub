@@ -47,34 +47,51 @@ internal fun FramedArtwork(
     onGesture: ((ArtworkGesture) -> Unit)? = null,
     onError: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val density = LocalDensity.current
     val tint = androidx.compose.material3.MaterialTheme.colorScheme.secondary
-
-    BoxWithConstraints(modifier.background(Brush.linearGradient(listOf(Panel, tint.copy(alpha = .19f), Night)))) {
-        val target = decode ?: with(density) {
-            ArtworkDecode(maxWidth.roundToPx().coerceIn(1, 1440), maxHeight.roundToPx().coerceIn(1, 1440))
+    val backdrop = remember(tint) { Brush.linearGradient(listOf(Panel, tint.copy(alpha = .19f), Night)) }
+    val surface = modifier.background(backdrop)
+    if (decode != null) {
+        FramedImage(file, frame, surface, decode, onGesture, onError)
+    } else {
+        val density = LocalDensity.current
+        BoxWithConstraints(surface) {
+            val target = with(density) {
+                ArtworkDecode(maxWidth.roundToPx().coerceIn(1, 1440), maxHeight.roundToPx().coerceIn(1, 1440))
+            }
+            FramedImage(file, frame, Modifier.fillMaxSize(), target, onGesture, onError)
         }
-        val request = remember(context, file, target) { artworkRequest(context, file, target) }
-        val painter = rememberAsyncImagePainter(model = request, onError = { onError() })
-        val transform = rememberUpdatedState(onGesture)
-        val input = if (onGesture == null) Modifier else Modifier.pointerInput(file, painter) {
-            detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, _ ->
-                val image = painter.intrinsicSize
-                if (image.isSpecified && image.width > 0f && image.height > 0f && size.width > 0 && size.height > 0) {
-                    transform.value?.invoke(ArtworkGesture(image, Size(size.width.toFloat(), size.height.toFloat()),
-                        centroid, pan, zoom))
-                }
+    }
+}
+
+@Composable
+private fun FramedImage(
+    file: File,
+    frame: ArtworkFrame,
+    modifier: Modifier,
+    target: ArtworkDecode,
+    onGesture: ((ArtworkGesture) -> Unit)?,
+    onError: () -> Unit
+) {
+    val context = LocalContext.current
+    val request = remember(context, file, target) { artworkRequest(context, file, target) }
+    val painter = rememberAsyncImagePainter(model = request, onError = { onError() })
+    val transform = rememberUpdatedState(onGesture)
+    val input = if (onGesture == null) Modifier else Modifier.pointerInput(file, painter) {
+        detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, _ ->
+            val image = painter.intrinsicSize
+            if (image.isSpecified && image.width > 0f && image.height > 0f && size.width > 0 && size.height > 0) {
+                transform.value?.invoke(ArtworkGesture(image, Size(size.width.toFloat(), size.height.toFloat()),
+                    centroid, pan, zoom))
             }
         }
-        Canvas(Modifier.fillMaxSize().then(input)) {
-            val intrinsic = painter.intrinsicSize
-            if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) {
-                val placement = frame.place(intrinsic.width, intrinsic.height, size.width, size.height)
-                clipRect {
-                    translate(placement.left, placement.top) {
-                        with(painter) { draw(Size(placement.width, placement.height)) }
-                    }
+    }
+    Canvas(modifier.fillMaxSize().then(input)) {
+        val intrinsic = painter.intrinsicSize
+        if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) {
+            val placement = frame.place(intrinsic.width, intrinsic.height, size.width, size.height)
+            clipRect {
+                translate(placement.left, placement.top) {
+                    with(painter) { draw(Size(placement.width, placement.height)) }
                 }
             }
         }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -24,7 +25,6 @@ import com.nexus.gamelauncher.audio.ToruvaAudio
 import com.nexus.gamelauncher.feature.library.LibraryViewModel
 import com.nexus.gamelauncher.feature.personalization.ThemeViewModel
 import com.nexus.gamelauncher.ui.NexusApp
-import com.nexus.gamelauncher.ui.Night
 import com.nexus.gamelauncher.ui.ToruvaIntro
 import dagger.hilt.android.AndroidEntryPoint
 import com.nexus.gamelauncher.ui.ColdStart
@@ -54,8 +54,8 @@ class MainActivity : ComponentActivity() {
                 if (settings.startup && settings.volume > 0) audio.awaitStartup()
             }
         }
-        var themeContentReady = false
-        splash.setKeepOnScreenCondition { !themeContentReady }
+        var contentReady = false
+        splash.setKeepOnScreenCondition { !contentReady }
         splash.setOnExitAnimationListener { it.remove() }
         enableEdgeToEdge(navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         setContent {
@@ -64,25 +64,22 @@ class MainActivity : ComponentActivity() {
             val resolved = palette
             val sound = audioSettings
             if (sound != null) SideEffect { audio.update(sound) }
-            if (resolved == null) {
-                Box(Modifier.fillMaxSize().background(Night))
-            } else {
-                Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().background(colorResource(R.color.toruva_icon_background))) {
+                if (resolved != null) {
                     NexusApp(library, themeModel, resolved, audio, sound)
-                    if (intro) {
-                        ToruvaIntro(prepare = ::prepareStartupSound, play = { audio.play(Cue.Startup) },
-                            finished = { intro = false })
-                        BackHandler { intro = false; audio.cancelStartup() }
-                    }
                 }
-                if (cold && !animate) {
+                if (intro) {
+                    ToruvaIntro(prepare = ::prepareStartupSound, play = { audio.play(Cue.Startup) },
+                        finished = { intro = false })
+                    BackHandler { intro = false; audio.cancelStartup() }
+                } else if (cold && !animate && resolved != null) {
                     LaunchedEffect(Unit) {
                         prepareStartupSound()
                         audio.play(Cue.Startup)
                     }
                 }
-                SideEffect { themeContentReady = true }
             }
+            SideEffect { contentReady = true }
         }
     }
 

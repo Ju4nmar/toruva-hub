@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.util.LruCache
 import android.net.Uri
 import com.nexus.gamelauncher.feature.emulators.KnownEmulator
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -36,6 +37,7 @@ class LibraryRepository @Inject constructor(
 ) {
     val entries = dao.observe()
     private val artworkLock = Mutex()
+    private val icons = LruCache<String, Drawable.ConstantState>(32)
 
     fun artworkFile(name: String?) = artwork.file(name)
 
@@ -66,6 +68,7 @@ class LibraryRepository @Inject constructor(
 
     @Suppress("DEPRECATION")
     suspend fun discover(): List<InstalledApp> = withContext(Dispatchers.IO) {
+        icons.evictAll()
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val activities = if (Build.VERSION.SDK_INT >= 33) {
@@ -92,7 +95,9 @@ class LibraryRepository @Inject constructor(
 
     suspend fun icon(packageName: String): Drawable? = withContext(Dispatchers.IO) {
         try {
-            context.packageManager.getApplicationIcon(packageName)
+            icons.get(packageName)?.newDrawable() ?: context.packageManager.getApplicationIcon(packageName).also { icon ->
+                icon.constantState?.let { icons.put(packageName, it) }
+            }
         } catch (_: PackageManager.NameNotFoundException) {
             null
         } catch (_: SecurityException) {

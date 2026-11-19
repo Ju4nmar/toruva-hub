@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -74,7 +75,7 @@ private fun QuickAccessCarousel(
     details: (InstalledApp) -> Unit,
     moveSound: () -> Unit
 ) {
-    val restoredIndex = games.indexOfFirst { it.packageName == active.packageName }
+    val restoredIndex = remember(games, active.packageName) { games.indexOf(active).coerceAtLeast(0) }
     val pager = rememberPagerState(initialPage = restoredIndex) { games.size }
     val scope = rememberCoroutineScope()
     var ready by remember { mutableStateOf(false) }
@@ -95,30 +96,32 @@ private fun QuickAccessCarousel(
             .collect { packageName ->
                 if (packageName != last) onMove()
                 last = packageName
-                model.selectForHome(packageName)
+                if (model.homeSelection.value != packageName) model.selectForHome(packageName)
             }
     }
 
-    val confirmed by remember(pager) {
+    val confirmed = remember(pager) {
         derivedStateOf { if (ready) pager.centered(currentGames) else null }
     }
-    val focused by remember(pager) {
+    val fallback = rememberUpdatedState(active)
+    val background = remember(pager) {
+        derivedStateOf { if (ready) currentGames.getOrNull(pager.settledPage) ?: fallback.value else fallback.value }
+    }
+    val displayed = remember(pager) {
         derivedStateOf {
-            if (ready) visuallyFocusedGame(
+            val focused = if (ready) visuallyFocusedGame(
                 currentGames, pager.currentPage, pager.targetPage, pager.currentPageOffsetFraction, dragging
             ) else null
+            focused ?: confirmed.value ?: background.value
         }
     }
-    val background = if (ready) games.getOrNull(pager.settledPage) ?: active else active
-    val displayed = focused ?: confirmed ?: background
-    val displayedIndex = games.indexOfFirst { it.packageName == displayed.packageName }
 
     LaunchedEffect(pager, loader, context) {
         snapshotFlow {
             val current = pager.centered(currentGames)
             if (!ready || current == null) null
             else {
-                val index = currentGames.indexOf(current)
+                val index = pager.settledPage
                 val adjacent = currentGames.getOrNull(index + 1) ?: currentGames.getOrNull(index - 1)
                 adjacent?.let { libraryState.entries[it.packageName]?.backgroundFile }
             }
@@ -127,12 +130,7 @@ private fun QuickAccessCarousel(
         }
     }
 
-    FeaturedGame(
-        state, model, displayed, background, displayedIndex, games.size,
-        actionsEnabled = confirmed?.packageName == displayed.packageName,
-        play = { runForActiveGame(displayed, pager.centered(currentGames), model::launch) },
-        details = { runForActiveGame(displayed, pager.centered(currentGames), details) }
-    )
+    CarouselFeature(state, model, games, displayed, background, confirmed, pager, details)
 
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 18.dp),
@@ -146,6 +144,9 @@ private fun QuickAccessCarousel(
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val cardWidth = minOf(160.dp, maxWidth * .56f)
         val inset = (maxWidth - cardWidth) / 2
+        val decode = with(LocalDensity.current) {
+            ArtworkDecode(cardWidth.roundToPx().coerceIn(1, 480), 82.dp.roundToPx().coerceIn(1, 256))
+        }
         HorizontalPager(
             state = pager,
             pageSize = PageSize.Fixed(cardWidth),
@@ -155,25 +156,66 @@ private fun QuickAccessCarousel(
             key = { games[it].packageName }
         ) { page ->
             val game = games[page]
-            val selected = game.packageName == displayed.packageName
-            val emphasis by animateFloatAsState(if (selected) 1f else .88f, tween(170), label = "card emphasis")
-            CoverCard(
-                game, state, model,
-                onClick = {
-                    if (pager.centered(currentGames)?.packageName != game.packageName) {
-                        scope.launch { pager.animateScrollToPage(page, animationSpec = tween(175)) }
+            CarouselCover(
+                game, state.title(game), state.isFavorite(game), state.entries[game.packageName],
+                model, displayed, decode
+            ) {
+                if (pager.centered(currentGames)?.packageName != game.packageName) {
+                    scope.launch {
+                        val target = currentGames.indexOfFirst { it.packageName == game.packageName }
+                        if (target >= 0) pager.animateScrollToPage(target, animationSpec = tween(175))
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(82.dp).graphicsLayer {
-                    scaleX = emphasis
-                    scaleY = emphasis
-                    alpha = if (selected) 1f else .72f
-                },
-                selected = selected,
-                compact = true
-            )
+                }
+            }
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CarouselFeature(
+    state: LibraryState,
+    model: LibraryViewModel,
+    games: List<InstalledApp>,
+    displayed: State<InstalledApp>,
+    background: State<InstalledApp>,
+    confirmed: State<InstalledApp?>,
+    pager: PagerState,
+    details: (InstalledApp) -> Unit
+) {
+    val active by displayed
+    FeaturedGame(
+        state, model, active, background.value, games.indexOf(active), games.size,
+        actionsEnabled = confirmed.value?.packageName == active.packageName,
+        play = { runForActiveGame(active, pager.centered(games), model::launch) },
+        details = { runForActiveGame(active, pager.centered(games), details) }
+    )
+}
+
+@Composable
+private fun CarouselCover(
+    game: InstalledApp,
+    title: String,
+    favorite: Boolean,
+    entry: LibraryEntry?,
+    model: LibraryViewModel,
+    displayed: State<InstalledApp>,
+    decode: ArtworkDecode,
+    onClick: () -> Unit
+) {
+    val selected by remember(game.packageName, displayed) {
+        derivedStateOf { game.packageName == displayed.value.packageName }
+    }
+    val emphasis by animateFloatAsState(if (selected) 1f else .88f, tween(170), label = "card emphasis")
+    CoverCard(
+        game, title, favorite, entry, model, onClick,
+        Modifier.fillMaxWidth().height(82.dp).graphicsLayer {
+            scaleX = emphasis
+            scaleY = emphasis
+            alpha = if (selected) 1f else .72f
+        },
+        selected = selected, compact = true, decode = decode
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)

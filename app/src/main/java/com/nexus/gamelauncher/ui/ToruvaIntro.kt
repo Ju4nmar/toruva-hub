@@ -5,6 +5,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
+import com.nexus.gamelauncher.R
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -60,6 +62,7 @@ private fun phase(time: Float, start: Float, end: Float) = ((time - start) / (en
 
 @Composable
 internal fun ToruvaIntro(prepare: suspend () -> Unit, play: () -> Unit, finished: () -> Unit) {
+    val startupBackground = colorResource(R.color.toruva_icon_background)
     val time = remember { mutableFloatStateOf(0f) }
     val layers = remember { brandLayers() }
     val particles = remember(layers) { sparks(layers) }
@@ -86,7 +89,7 @@ internal fun ToruvaIntro(prepare: suspend () -> Unit, play: () -> Unit, finished
     }) {
         val t = time.floatValue
         val opacity = 1f - phase(t, .89f, 1f)
-        drawRect(Color(0xFF03050F), alpha = opacity)
+        drawRect(startupBackground, alpha = opacity)
         val scale = minOf(size.width * .83f / 1240f, size.height * .82f / 540f)
         withTransform({
             translate((size.width - 1240f * scale) / 2, (size.height - 540f * scale) / 2)
