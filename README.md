@@ -1,26 +1,62 @@
 # TORUVA HUB
 
-Launcher Android en horizontal y modo inmersivo. La versión **0.3.0** incorpora la nueva identidad, encendido con partículas y efectos de sonido sobre la base de NEXUS 0.2.1.
+TORUVA HUB is a landscape-first Android launcher for organizing and opening games already installed on your device. It combines an immersive home screen with a searchable game library, per-game artwork, and configurable sound effects.
 
-## Funcionalidades
+**Version 0.3.0 was functionally validated on a Xiaomi Redmi Note 13 Pro 4G.** The device checks covered cold startup, sound, returning from games, carousel navigation, artwork, and game selection.
 
-- **Inicio** reúne favoritos y recientes sin duplicados en un carrusel con centrado automático. El juego centrado determina el título, el fondo y las acciones **Jugar** y **Detalles**.
-- **Biblioteca** muestra juegos reconocidos por Android y juegos agregados expresamente. Incluye carátulas, búsqueda por nombre original o visible, favoritos y un selector para agregar juegos. Los emuladores conocidos se separan de la detección automática de juegos.
-- **Detalles** permite abrir un juego, editar su nombre visible y administrar su carátula y fondo. En modo **Personalizado**, arrastra o pellizca la vista previa. También puedes usar las barras. **Guardar** conserva el encuadre y **Restablecer ajuste** vuelve a **Rellenar**. **Ajustar completo** conserva la imagen entera.
-- **Personalización** incluye seis temas. El primer fotograma de la interfaz usa el tema guardado. Personalización incluye interruptores independientes para efectos y encendido, y un control de volumen. Consulta el [inventario de audio](AUDIO.md).
-- Room guarda biblioteca, historial y encuadres. DataStore guarda el tema. NEXUS importa copias privadas de las imágenes elegidas en el selector de Android.
+## Features
 
-## Compilar en Windows
+- **Quick access:** A centered carousel prioritizes favorites and recently opened games. Play and Details follow the centered game.
+- **Game library:** Android game metadata helps discover installed games. Add or remove entries manually, search by original or custom name, and manage favorites. Known emulators are excluded from automatic game detection.
+- **Game details:** Open a game, rename it for display, and customize its cover and background. Fill, Fit, and Custom framing support pinch, drag, and accessible sliders.
+- **Personalization:** Six visual themes, a particle animation on cold startup, independent startup and navigation sound toggles, and a 0–100% volume control.
+- **Local storage:** Room stores the library, history, and framing. DataStore stores preferences. Selected artwork is copied into app-private storage.
 
-Usa JDK 17 y Android SDK 34. Configura la ruta de tu SDK en `local.properties`. El proyecto usa Kotlin 2.1.21, AGP 8.7.2 y el Gradle Wrapper 8.9.
+## Technology and requirements
+
+| Component | Requirement |
+| --- | --- |
+| Target device | Android 10 or later (API 29+) |
+| Build SDK | Android SDK Platform 34 |
+| Java | JDK 17, Eclipse Temurin for the configured Gradle daemon |
+| Build tools | Gradle Wrapper 8.9 and Android Gradle Plugin 8.7.2 |
+| App stack | Kotlin 2.1.21, Jetpack Compose, Hilt, Room, DataStore, and Coil |
+
+Use Android Studio to install the SDK and Platform Tools. Set `ANDROID_HOME` to your SDK directory or create an untracked `local.properties` in the project root. On Windows, use forward slashes in the SDK path, for example `sdk.dir=C:/Android/Sdk`.
+
+## Build and install
+
+Clone the repository, then build the debug APK:
 
 ```powershell
-.\gradlew.bat testDebugUnitTest
+git clone https://github.com/Ju4nmar/toruva-hub.git
+cd toruva-hub
 .\gradlew.bat assembleDebug
 ```
 
-APK de depuración en `app/build/outputs/apk/debug/app-debug.apk`. Para ejecutar las pruebas instrumentadas, usa `.\gradlew.bat connectedDebugAndroidTest` con un dispositivo o emulador de pruebas conectado.
+On macOS or Linux, run `./gradlew assembleDebug`. The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-## Validación de la fase 2
+To install it on a connected device, enable USB debugging and authorize the computer:
 
-El usuario reportó **11 de 11 pruebas manuales satisfactorias** para NEXUS 0.2.1 en el **Xiaomi Redmi Note 13 Pro 4G**, antes del editor táctil. Las comprobaciones específicas del nuevo editor están en las [notas de versión](CHANGELOG.md). El [backlog](BACKLOG.md) conserva el registro del encendido.
+```powershell
+adb devices
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+TORUVA HUB retains the application ID `com.nexus.gamelauncher`. An in-place update preserves app data when Android accepts the existing and new APKs as the same signing identity.
+
+## Tests
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat connectedDebugAndroidTest
+```
+
+Run instrumented tests with an Android test device or emulator connected.
+
+## Project notes
+
+- [Changelog](CHANGELOG.md)
+- [Audio assets and playback](AUDIO.md)
+- [Startup and carousel performance](PERFORMANCE.md)
+- [Backlog](BACKLOG.md)

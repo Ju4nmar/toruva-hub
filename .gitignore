@@ -4,3 +4,16 @@
 /local.properties
 **/build/
 *.iml
+
+# Local credentials and generated Android packages
+.env
+.env.*
+!.env.example
+key.properties
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.apk
+*.aab
