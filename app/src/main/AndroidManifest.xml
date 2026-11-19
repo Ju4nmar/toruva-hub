@@ -5,8 +5,8 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
-    <application android:name=".NexusApplication" android:label="NEXUS Game Launcher"
-        android:icon="@drawable/ic_nexus" android:theme="@style/Theme.Nexus"
+    <application android:name=".NexusApplication" android:label="@string/app_name"
+        android:icon="@mipmap/ic_toruva" android:theme="@style/Theme.Nexus"
         android:allowBackup="false">
         <activity android:name=".MainActivity" android:theme="@style/Theme.Nexus.Starting" android:exported="true"
             android:screenOrientation="sensorLandscape" android:windowSoftInputMode="adjustResize">

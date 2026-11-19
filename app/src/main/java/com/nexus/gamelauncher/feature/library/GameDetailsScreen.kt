@@ -136,7 +136,7 @@ fun GameDetailsScreen(packageName: String, state: LibraryState, model: LibraryVi
         AlertDialog(
             onDismissRequest = { confirmRemoval = false },
             title = { Text("¿Quitar de la biblioteca?") },
-            text = { Text("${state.title(app)} dejará de aparecer en NEXUS. Podrás agregarlo de nuevo.") },
+            text = { Text("${state.title(app)} dejará de aparecer en TORUVA HUB. Podrás agregarlo de nuevo.") },
             confirmButton = {
                 TextButton(onClick = { model.setIncluded(app, false); confirmRemoval = false; back() }) { Text("Quitar") }
             },

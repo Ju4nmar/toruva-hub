@@ -17,7 +17,7 @@ data class ArtworkFrame(
 
     fun normalized() = if (fit == ArtworkFit.Custom) copy(
         mode = fit.name,
-        zoom = zoom.finiteOr(1f).coerceIn(1f, 3f),
+        zoom = zoom.finiteOr(1f).coerceIn(MIN_ARTWORK_ZOOM, 3f),
         x = x.finiteOr(0f).coerceIn(-1f, 1f),
         y = y.finiteOr(0f).coerceIn(-1f, 1f)
     ) else ArtworkFrame(fit.name)
@@ -38,11 +38,12 @@ internal fun ArtworkFrame.place(sourceWidth: Float, sourceHeight: Float, width: 
     val freeY = (height - renderedHeight) / 2
     return ArtworkPlacement(
         renderedWidth, renderedHeight,
-        freeX + frame.x * max(0f, -freeX),
-        freeY + frame.y * max(0f, -freeY)
+        freeX + frame.x * kotlin.math.abs(freeX),
+        freeY + frame.y * kotlin.math.abs(freeY)
     )
 }
 
+internal const val MIN_ARTWORK_ZOOM = .25f
 internal const val ARTWORK_MAX_BYTES = 32L * 1024 * 1024
 internal fun supportedArtworkDimensions(width: Int, height: Int) =
     width in 1..16384 && height in 1..16384 && width.toLong() * height <= 100_000_000L

@@ -40,7 +40,8 @@ fun HomeScreen(
     games: List<InstalledApp>,
     active: InstalledApp?,
     openLibrary: (Boolean) -> Unit,
-    details: (InstalledApp) -> Unit
+    details: (InstalledApp) -> Unit,
+    moveSound: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 10.dp)) {
         if (active == null) {
@@ -56,7 +57,7 @@ fun HomeScreen(
             val packages = remember(games) { games.map(InstalledApp::packageName) }
             // Recreation by catalog identity prevents a moved index from becoming the active game.
             key(packages) {
-                QuickAccessCarousel(state, model, games, active, openLibrary = { openLibrary(false) }, details)
+                QuickAccessCarousel(state, model, games, active, openLibrary = { openLibrary(false) }, details, moveSound)
             }
         }
     }
@@ -70,7 +71,8 @@ private fun QuickAccessCarousel(
     games: List<InstalledApp>,
     active: InstalledApp,
     openLibrary: () -> Unit,
-    details: (InstalledApp) -> Unit
+    details: (InstalledApp) -> Unit,
+    moveSound: () -> Unit
 ) {
     val restoredIndex = games.indexOfFirst { it.packageName == active.packageName }
     val pager = rememberPagerState(initialPage = restoredIndex) { games.size }
@@ -78,6 +80,7 @@ private fun QuickAccessCarousel(
     var ready by remember { mutableStateOf(false) }
     val currentGames by rememberUpdatedState(games)
     val libraryState by rememberUpdatedState(state)
+    val onMove by rememberUpdatedState(moveSound)
     val dragging by pager.interactionSource.collectIsDraggedAsState()
     val context = LocalContext.current
     val loader = context.imageLoader
@@ -86,9 +89,14 @@ private fun QuickAccessCarousel(
         // The package recorded after the last snap takes precedence over a restored scroll offset.
         pager.scrollToPage(restoredIndex)
         ready = true
+        var last = currentGames.getOrNull(restoredIndex)?.packageName
         snapshotFlow { pager.centered(currentGames)?.packageName }
             .filterNotNull()
-            .collect { model.selectForHome(it) }
+            .collect { packageName ->
+                if (packageName != last) onMove()
+                last = packageName
+                model.selectForHome(packageName)
+            }
     }
 
     val confirmed by remember(pager) {

@@ -1,5 +1,17 @@
 # Notas de versión
 
+## 0.3.0 · TORUVA HUB
+
+- Identidad TORUVA HUB basada en el logotipo aprobado e icono adaptable de Android.
+- Encendido de 2,5 s con partículas que construyen el mando y el texto, destello de contorno y pulso final.
+- Seis efectos originales y preferencias de sonido persistentes en Personalización.
+- Encuadre personalizado con zoom de 0,25× a 3×. Las imágenes y encuadres guardados son compatibles.
+- Se conserva el identificador de aplicación y Room v4. El tema usa su clave de DataStore histórica.
+
+### Verificación
+
+Compilación de depuración exitosa, 25 pruebas unitarias y 8 instrumentadas. En el emulador se instaló 0.3.0 sobre el APK de NEXUS 0.2.1 y se verificaron el tema guardado, el catálogo, favoritos, historial y encuadre. La comprobación acústica y de fluidez queda pendiente en el Xiaomi.
+
 ## 0.2.1 · Cierre de fase 2
 
 - El modo **Personalizado** del editor permite arrastrar con un dedo y pellizcar con dos dedos directamente en la vista previa de carátulas y fondos. El pellizco se centra en los dedos y los límites impiden desplazar la imagen fuera del encuadre.

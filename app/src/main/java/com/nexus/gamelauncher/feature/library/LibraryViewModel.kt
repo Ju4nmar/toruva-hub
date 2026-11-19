@@ -1,6 +1,8 @@
 package com.nexus.gamelauncher.feature.library
 
 import android.net.Uri
+import com.nexus.gamelauncher.audio.Cue
+import com.nexus.gamelauncher.audio.ToruvaAudio
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,7 +21,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(private val repository: LibraryRepository,
-    private val savedState: SavedStateHandle
+    private val savedState: SavedStateHandle,
+    private val audio: ToruvaAudio
 ) : ViewModel() {
     private val discovery = MutableStateFlow(Discovery())
     private var refreshJob: Job? = null
@@ -81,6 +84,7 @@ class LibraryViewModel @Inject constructor(private val repository: LibraryReposi
 
     fun launch(app: InstalledApp) {
         if (repository.launch(app)) {
+            audio.play(Cue.Launch)
             save("Se abrió la aplicación, pero no se pudo guardar en Recientes.") {
                 repository.recordLaunch(app)
             }

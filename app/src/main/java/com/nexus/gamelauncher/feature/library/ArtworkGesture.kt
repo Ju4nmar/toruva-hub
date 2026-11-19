@@ -17,7 +17,7 @@ internal fun ArtworkFrame.applyGesture(gesture: ArtworkGesture): ArtworkFrame {
     val (image, viewport, centroid, pan, zoomChange) = gesture
 
     val before = current.place(image.width, image.height, viewport.width, viewport.height)
-    val zoom = (current.zoom * zoomChange).coerceIn(1f, 3f)
+    val zoom = (current.zoom * zoomChange).coerceIn(MIN_ARTWORK_ZOOM, 3f)
     val ratio = zoom / current.zoom
     val left = centroid.x + (before.left - centroid.x) * ratio + pan.x
     val top = centroid.y + (before.top - centroid.y) * ratio + pan.y
@@ -30,6 +30,7 @@ internal fun ArtworkFrame.applyGesture(gesture: ArtworkGesture): ArtworkFrame {
 }
 
 private fun relativePan(offset: Float, viewport: Float, image: Float, previous: Float): Float {
-    val overflow = (image - viewport) / 2f
-    return if (overflow > .001f) ((offset + overflow) / overflow).coerceIn(-1f, 1f) else previous
+    val center = (viewport - image) / 2f
+    val travel = kotlin.math.abs(center)
+    return if (travel > .001f) ((offset - center) / travel).coerceIn(-1f, 1f) else previous
 }

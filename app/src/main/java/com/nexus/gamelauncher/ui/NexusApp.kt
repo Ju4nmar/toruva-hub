@@ -1,6 +1,10 @@
 package com.nexus.gamelauncher.ui
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
+import com.nexus.gamelauncher.audio.AudioSettings
+import com.nexus.gamelauncher.audio.Cue
+import com.nexus.gamelauncher.audio.ToruvaAudio
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,7 +67,7 @@ fun themeColors(theme: NexusTheme, packageName: String?): Pair<Color, Color> {
 }
 
 @Composable
-fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusTheme) {
+fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusTheme, audio: ToruvaAudio, sound: AudioSettings?) {
     val state by library.state.collectAsStateWithLifecycle()
     val selection by library.homeSelection.collectAsStateWithLifecycle()
     val quickAccess = remember(state) { state.quickAccess() }
@@ -81,6 +85,7 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
     LaunchedEffect(themes) { themes.feedback.collect { snackbar.showSnackbar(it) } }
 
     fun open(page: Page) {
+        if (activeRoute != page.name) audio.play(Cue.Tab)
         nav.navigate(page.name) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -89,7 +94,12 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
     }
 
     fun details(app: InstalledApp) {
+        audio.play(Cue.Select)
         nav.navigate("game/${Uri.encode(app.packageName)}") { launchSingleTop = true }
+    }
+
+    fun back() {
+        if (nav.popBackStack()) audio.play(Cue.Back)
     }
 
     MaterialTheme(colorScheme = darkColorScheme(
@@ -108,8 +118,8 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
                         val showLabels = maxWidth >= 520.dp
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             if (showBrand) {
-                                Icon(painterResource(R.drawable.ic_nexus), null, Modifier.size(38.dp), tint = Color.Unspecified)
-                                Text("NEXUS", Modifier.padding(end = 12.dp), fontWeight = FontWeight.Black, fontSize = 19.sp)
+                                Icon(painterResource(R.drawable.toruva_brand), "TORUVA HUB",
+                                    Modifier.width(114.dp).height(42.dp).padding(end = 8.dp), tint = Color.Unspecified)
                             }
                             Page.entries.forEach { page ->
                                 val selected = (activeRoute ?: Page.Home.name) == page.name
@@ -152,7 +162,7 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
                             HomeScreen(state, library, quickAccess, selected, openLibrary = { add ->
                                 open(Page.Library)
                                 if (add) nav.currentBackStackEntry?.savedStateHandle?.set("showAddGame", true)
-                            }, details = ::details)
+                            }, details = ::details, moveSound = { audio.play(Cue.Carousel) })
                         }
                         composable(Page.Library.name) { libraryEntry ->
                             val showPicker by libraryEntry.savedStateHandle.getStateFlow("showAddGame", false)
@@ -165,7 +175,7 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
                             type = NavType.StringType
                         })) { detailEntry ->
                             val packageName = detailEntry.arguments?.getString("packageName").orEmpty()
-                            GameDetailsScreen(packageName, state, library) { nav.popBackStack() }
+                            GameDetailsScreen(packageName, state, library, back = ::back)
                         }
                         composable(Page.Emulators.name) {
                             Placeholder("Emuladores", "Tu colección de consolas", Icons.Outlined.SportsEsports,
@@ -175,9 +185,10 @@ fun NexusApp(library: LibraryViewModel, themes: ThemeViewModel, theme: NexusThem
                             Placeholder("Estadísticas", "Tu actividad de juego", Icons.Outlined.BarChart,
                                 "Aún no hay estadísticas", "Aquí podrás consultar tus sesiones y tiempo de juego.")
                         }
-                        composable(Page.Themes.name) { PersonalizationScreen(theme, themes::choose) }
+                        composable(Page.Themes.name) { PersonalizationScreen(theme, { audio.play(Cue.Select); themes.choose(it) }, sound) { audio.update(it); themes.chooseAudio(it) } }
                     }
                 }
+                BackHandler(enabled = nav.previousBackStackEntry != null && entry != null, onBack = ::back)
                 SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
             }
         }

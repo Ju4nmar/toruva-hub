@@ -1,5 +1,5 @@
 # Backlog
 
-## Animación de arranque NEXUS
+## Animación de arranque
 
-Pendiente de implementación. El destello neón recorrerá el borde del control, seguido de un pulso luminoso breve en sus dos botones y la transición al nombre NEXUS y a Inicio. La animación será corta, respetará las preferencias de animación del sistema y dará paso a Inicio tan pronto como esté listo.
+Integrada en TORUVA HUB 0.3.0. El encendido reúne las partículas en el mando, recorre su contorno con un destello y hace pulsar los botones del logotipo antes de mostrar Inicio.

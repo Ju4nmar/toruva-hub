@@ -69,7 +69,7 @@ internal fun ArtworkEditor(
                         }
                         if (frame.fit == ArtworkFit.Custom) {
                             Text("Arrastra o pellizca la imagen.", style = MaterialTheme.typography.bodySmall)
-                            FrameSlider("Zoom", frame.zoom, 1f..3f) { zoom = it }
+                            FrameSlider("Zoom", frame.zoom, MIN_ARTWORK_ZOOM..3f) { zoom = it }
                             FrameSlider("Desplazamiento horizontal", frame.x, -1f..1f) { x = it }
                             FrameSlider("Desplazamiento vertical", frame.y, -1f..1f) { y = it }
                         }

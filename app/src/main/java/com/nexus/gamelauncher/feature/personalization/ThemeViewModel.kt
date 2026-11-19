@@ -1,7 +1,12 @@
 package com.nexus.gamelauncher.feature.personalization
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import com.nexus.gamelauncher.audio.AudioSettings
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
@@ -23,7 +28,7 @@ import kotlinx.coroutines.launch
 
 enum class NexusTheme(val label: String, val accent: Long, val glow: Long) {
     Dynamic("Dinámico", 0xFF62D6FF, 0xFFA680FF),
-    Blue("Nexus Azul", 0xFF55BFFF, 0xFF3F65FF),
+    Blue("Toruva Azul", 0xFF55BFFF, 0xFF3F65FF),
     Purple("Púrpura Neón", 0xFFC68CFF, 0xFF9455FF),
     Red("Rojo Gamer", 0xFFFF8E98, 0xFFFF483E),
     Minimal("Minimalista", 0xFFD5E1F1, 0xFF8292AD),
@@ -32,9 +37,23 @@ enum class NexusTheme(val label: String, val accent: Long, val glow: Long) {
 
 private val Context.preferences by preferencesDataStore("nexus_preferences")
 
-class ThemeRepository @Inject constructor(@ApplicationContext context: Context) {
-    private val store = context.preferences
+class ThemeRepository internal constructor(private val store: DataStore<Preferences>) {
+    @Inject constructor(@ApplicationContext context: Context) : this(context.preferences)
     private val key = stringPreferencesKey("theme")
+    private val effects = booleanPreferencesKey("sound_effects")
+    private val startup = booleanPreferencesKey("sound_startup")
+    private val volume = intPreferencesKey("sound_volume")
+    val audio = store.data.map { values ->
+        AudioSettings(values[effects] ?: true, values[startup] ?: true, (values[volume] ?: 65).coerceIn(0, 100))
+    }
+
+    suspend fun setAudio(value: AudioSettings) {
+        store.edit { values ->
+            values[effects] = value.effects
+            values[startup] = value.startup
+            values[volume] = value.volume.coerceIn(0, 100)
+        }
+    }
     val theme = store.data.map { preferences ->
         NexusTheme.entries.firstOrNull { it.name == preferences[key] } ?: NexusTheme.Dynamic
     }
@@ -56,6 +75,21 @@ class ThemeViewModel @Inject constructor(private val repository: ThemeRepository
         messages.send("No se pudo leer el tema guardado.")
         emit(NexusTheme.Dynamic)
     }, viewModelScope)
+
+    val audio: StateFlow<AudioSettings?> = repository.audio.catch { error ->
+        if (error !is IOException) throw error
+        emit(AudioSettings(effects = false, startup = false))
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun chooseAudio(value: AudioSettings) {
+        viewModelScope.launch {
+            try {
+                repository.setAudio(value)
+            } catch (_: IOException) {
+                messages.send("No se pudieron guardar los ajustes de sonido.")
+            }
+        }
+    }
 
     fun choose(theme: NexusTheme) {
         viewModelScope.launch {
